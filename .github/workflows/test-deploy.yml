@@ -74,7 +74,11 @@ jobs:
     - name: Prepare
       id: prep
       run: |
-        DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/${GITHUB_REPOSITORY#*/}
+        if [ -z "${{ secrets.DOCKER_USERNAME }}" ]; then
+          echo "DOCKER_USERNAME secret is not set. Please set it in your repository secrets." >&2
+          exit 1
+        fi
+        DOCKER_IMAGE="${{ secrets.DOCKER_USERNAME }}/${GITHUB_REPOSITORY#*/}"
         VERSION=latest
         SHORTREF=${GITHUB_SHA::8}
 
@@ -93,9 +97,9 @@ jobs:
           TAGS="$TAGS,${DOCKER_IMAGE}:latest"
         fi
 
-        # Set output parameters.
-        echo ::set-output name=tags::${TAGS}
-        echo ::set-output name=docker_image::${DOCKER_IMAGE}
+        # Set output parameters using environment files (not deprecated set-output)
+        echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+        echo "docker_image=${DOCKER_IMAGE}" >> "$GITHUB_OUTPUT"
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@master
